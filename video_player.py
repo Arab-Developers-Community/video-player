@@ -8,12 +8,24 @@ import queue
 from detect_nude import detect_nude
 import numpy as np 
 from PIL import Image, ImageTk
+from pydub import AudioSegment
+import os
+from pydub.playback import play
+
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 
 class VideoPlayer:
+
+    def setup_audo_lib(self):
+        AudioSegment.converter = "{}\\ffmpeg\\bin\\ffmpeg.exe".format(os.getcwd())
+        AudioSegment.ffmpeg = "{}\\ffmpeg\\bin\\ffmpeg.exe".format(os.getcwd())
+        AudioSegment.ffprobe ="{}\\ffmpeg\\bin\\ffprobe.exe".format(os.getcwd())
+        print(AudioSegment.converter, AudioSegment.ffmpeg, AudioSegment.ffprobe)
+        return AudioSegment
+    
     def __init__(self, video):
         self.root = ctk.CTk()
         self.window_height = self.root.winfo_screenheight()
@@ -24,7 +36,6 @@ class VideoPlayer:
         self.image_label = None
         self.video_file_path = None
         self.frame = None
-
         self.current_image = ctk.CTkImage(light_image=Image.open('assets/black.jpg'),
                                           dark_image=Image.open('assets/black.jpg'),
                                           size=(self.window_height, self.window_width))
@@ -36,6 +47,7 @@ class VideoPlayer:
         self.frames_displayed = 0
         self.initialize_gui()
         self.create_threads()
+        self.start_audio_thread(video)
         self.update()
         self.root.mainloop()
 
@@ -61,9 +73,9 @@ class VideoPlayer:
 
         self.display_frame(cv2.cvtColor(self.buffer.get(), cv2.COLOR_BGR2RGB))
         self.frames_displayed = self.frames_displayed + 1
-        timePerFrame = 1000 / self.fps
+        timePerFrame = int(1000 / self.fps)
         self.root.after(timePerFrame, self.update)
-
+        
     def start_checking(self, lock):
         while True:
             lock.acquire()
@@ -89,6 +101,14 @@ class VideoPlayer:
 
     def black_frame(self, dim):
         return np.zeros(dim)
+    
+    def start_audio(self, path):
+        audio = self.setup_audo_lib().from_file(path, "mp4")
+        play(audio)
+    
+    def start_audio_thread(self, path):
+        thread = threading.Thread(target=self.start_audio, args=(path,))
+        thread.start()
     
     def display_frame(self, frame):
         image = Image.fromarray(frame)
