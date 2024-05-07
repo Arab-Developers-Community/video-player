@@ -61,8 +61,8 @@ class VideoPlayer:
 
         self.display_frame(cv2.cvtColor(self.buffer.get(), cv2.COLOR_BGR2RGB))
         self.frames_displayed = self.frames_displayed + 1
-
-        self.root.after(1, self.update)
+        timePerFrame = 1000 / self.fps
+        self.root.after(timePerFrame, self.update)
 
     def start_checking(self, lock):
         while True:
@@ -72,7 +72,7 @@ class VideoPlayer:
             image = Image.fromarray(frame)
             if ret:
                 # this code to detect nudity **NEED TO BE UPDATED
-                if self.detector.detect(image):
+                if True or self.detector.detect(image):
                     self.buffer.put(frame)
                 ##################################################
             else:

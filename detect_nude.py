@@ -15,12 +15,11 @@ class detect_nude:
         model = tf.keras.models.load_model('model.h5')
         return model
 
-    def detect(self, frame):
-        image = self.preprocess_image(frame)
-        inputs = np.expand_dims(image, axis=0)
-        sfw_probability, nsfw_probability = self.model.predict(inputs)[0]
-        print(sfw_probability > 0.7)
-        return sfw_probability > 0.7
+    def detect(self, frames):
+        preprocessed = []
+        for frame in frames:
+            preprocessed.append(self.preprocess_image(frame))
+        return self.model.predict(preprocessed)
 
     def preprocess_image(self, pil_image: Image):
         if pil_image.mode != "RGB":
