@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
-
 import customtkinter as ctk
 import cv2
 import threading
 import queue
+from detect_nude import detect_nude
+import numpy as np 
 from PIL import Image, ImageTk
 
 ctk.set_appearance_mode("dark")
@@ -19,7 +20,7 @@ class VideoPlayer:
         self.window_width = self.root.winfo_screenwidth()
         self.root.geometry("1080x800")
         self.root.title("Video Player")
-
+        self.detector = detect_nude({'filter_nudes': True, 'filter_kissing': True})
         self.image_label = None
         self.video_file_path = None
         self.frame = None
@@ -30,6 +31,7 @@ class VideoPlayer:
 
         self.video_capture = cv2.VideoCapture(video)
         self.frame_count = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
         self.buffer = queue.Queue()
         self.frames_displayed = 0
         self.initialize_gui()
@@ -67,10 +69,11 @@ class VideoPlayer:
             lock.acquire()
 
             ret, frame = self.video_capture.read()
-
+            image = Image.fromarray(frame)
             if ret:
                 # this code to detect nudity **NEED TO BE UPDATED
-                self.buffer.put(frame)
+                if self.detector.detect(image):
+                    self.buffer.put(frame)
                 ##################################################
             else:
                 # If the video ends, you can add logic to handle this event
@@ -84,6 +87,9 @@ class VideoPlayer:
             thread = threading.Thread(target=VideoPlayer.start_checking, args=(self, lock,))
             thread.start()
 
+    def black_frame(self, dim):
+        return np.zeros(dim)
+    
     def display_frame(self, frame):
         image = Image.fromarray(frame)
         photo = ImageTk.PhotoImage(image=image)
