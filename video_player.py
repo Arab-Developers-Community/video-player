@@ -11,6 +11,7 @@ from PIL import Image, ImageTk
 from pydub import AudioSegment
 import os
 from pydub.playback import play
+import time
 
 
 ctk.set_appearance_mode("dark")
@@ -45,6 +46,7 @@ class VideoPlayer:
         self.fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
         self.buffer = queue.Queue()
         self.frames_displayed = 0
+        self.lastTimeStamp = time.time() * 1000
         self.initialize_gui()
         self.create_threads()
         self.start_audio_thread(video)
@@ -70,11 +72,15 @@ class VideoPlayer:
             # If the video ends, you can add logic to handle this event
             self.video_capture.release()
             quit(0)
-
-        self.display_frame(cv2.cvtColor(self.buffer.get(), cv2.COLOR_BGR2RGB))
+        timePerFrame = 1000 / self.fps
+        currentTimeStamp = time.time() * 1000
+        if (currentTimeStamp - self.lastTimeStamp) <= timePerFrame:
+            self.root.after(1, self.update)
+            return
+        self.lastTimeStamp = currentTimeStamp
+        self.display_frame(self.buffer.get())
         self.frames_displayed = self.frames_displayed + 1
-        timePerFrame = int(1000 / self.fps)
-        self.root.after(timePerFrame, self.update)
+        self.root.after(1, self.update)
         
     def start_checking(self, lock):
         while True:
@@ -85,7 +91,7 @@ class VideoPlayer:
             if ret:
                 # this code to detect nudity **NEED TO BE UPDATED
                 if True or self.detector.detect(image):
-                    self.buffer.put(frame)
+                    self.buffer.put(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 ##################################################
             else:
                 # If the video ends, you can add logic to handle this event
