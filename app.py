@@ -3,6 +3,13 @@ import customtkinter as ctk
 import video_player as vp
 import tkinter as tk
 import tkinter.messagebox as tk_mb
+from video_streamer import video_streamer
+from video_manager import video_manager
+from filtering_manager import filtering_manager
+from filtering_buffer import filtering_buffer
+from audio_manager import audio_manager
+import threading
+import time
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -31,7 +38,33 @@ class App:
                               message='Please make sure that you have selected a file!')
         else:
             self.app.destroy()
-            video = vp.VideoPlayer(self.video_file_path)
+            video = self.start_video()
+
+    def start_video(self):
+        self.start_filtering()
+        self.start_buffering()
+        def should_render_video(secs):
+            try:
+                return self.fb.get_buffer(0)[secs]
+            except:
+                print("not keeping up with the video {0}".format(len(self.fb.get_buffer(0))))
+                return True
+        time.sleep(10)   
+        video = video_streamer(self.video_file_path, should_render_video)
+        audio = audio_manager(self.video_file_path, should_render_video)
+        audio.startSyncThread()
+        video.start()
+
+   
+
+    def start_filtering(self):
+        vm = video_manager(self.video_file_path)
+        self.fm = filtering_manager(vm)
+        self.fm.startSyncThread()
+
+    def start_buffering(self):
+        self.fb = filtering_buffer(2, self.fm)
+        self.fb.startSyncThread()
 
     def initialize_gui(self):
         frame = ctk.CTkFrame(master=self.app)

@@ -3,12 +3,12 @@ import io
 import numpy as np
 import skimage.io
 from PIL import Image 
+from random import sample 
+
 
 class detect_nude:
 
     def __init__(self, config):
-        self.filter_nudes = config["filter_nudes"]
-        self.filter_kissing = config["filter_kissing"]
         self.model = self.load_model()
 
     def load_model(self):
@@ -16,10 +16,17 @@ class detect_nude:
         return model
 
     def detect(self, frames):
+        frames = sample(frames, len(frames) // 3)
         preprocessed = []
         for frame in frames:
-            preprocessed.append(self.preprocess_image(frame))
-        return self.model.predict(preprocessed)
+            preprocessed.append(
+                self.preprocess_image(Image.fromarray(frame))
+            )
+
+        for value in self.model.predict(np.array(preprocessed)):
+            if value[1] > 0.5:
+                return False
+        return True
 
     def preprocess_image(self, pil_image: Image):
         if pil_image.mode != "RGB":
