@@ -22,7 +22,7 @@ class filtering_manager:
             self.is_done = True
             return None
         results = self.detector.detect(frames)
-        if not results:
+        if results:
             self.update_state(self.state+[True])
         else:
             self.skip_seconds(self.secondsToSkip)

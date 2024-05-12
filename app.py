@@ -45,13 +45,22 @@ class App:
         self.start_buffering()
         def should_render_video(secs):
             try:
+                #print everrything
+                print("should render video  {0} {1}".format(self.fb.get_buffer(0)[secs]  , len(self.fb.get_buffer(0))))
                 return self.fb.get_buffer(0)[secs]
             except:
                 print("not keeping up with the video {0}".format(len(self.fb.get_buffer(0))))
                 return True
+            
+        def should_render_audio(secs):
+            try:
+                return self.fb.get_buffer(1)[secs]
+            except:
+                print("not keeping up with the video {0}".format(len(self.fb.get_buffer(1))))
+                return True
         time.sleep(10)   
         video = video_streamer(self.video_file_path, should_render_video)
-        audio = audio_manager(self.video_file_path, should_render_video)
+        audio = audio_manager(self.video_file_path, should_render_audio)
         audio.startSyncThread()
         video.start()
 
