@@ -16,7 +16,7 @@ class detect_nude:
         return model
 
     def detect(self, frames):
-        frames = sample(frames, len(frames) // 12)
+        frames = sample(frames, len(frames) // 2)
         preprocessed = []
         for frame in frames:
             preprocessed.append(
@@ -24,7 +24,7 @@ class detect_nude:
             )
 
         for value in self.model.predict(np.array(preprocessed)):
-            if value[1] > 0.7:
+            if value[1] > 0.5:
                 return False
         return True
 
