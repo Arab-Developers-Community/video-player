@@ -4,12 +4,41 @@ import numpy as np
 import skimage.io
 from PIL import Image 
 from random import sample 
+from nudenet import NudeDetector
 
+nude_detector = NudeDetector()
 
 class detect_nude:
 
     def __init__(self, config):
         self.model = self.load_model()
+        self.__labels = [
+            "FEMALE_GENITALIA_COVERED",
+            "FACE_FEMALE",
+            "BUTTOCKS_EXPOSED",
+            "FEMALE_BREAST_EXPOSED",
+            "FEMALE_GENITALIA_EXPOSED",
+            "MALE_BREAST_EXPOSED",
+            "ANUS_EXPOSED",
+            "FEET_EXPOSED",
+            "BELLY_COVERED",
+            "FEET_COVERED",
+            "ARMPITS_COVERED",
+            "ARMPITS_EXPOSED",
+            "FACE_MALE",
+            "BELLY_EXPOSED",
+            "MALE_GENITALIA_EXPOSED",
+            "ANUS_COVERED",
+            "FEMALE_BREAST_COVERED",
+            "BUTTOCKS_COVERED",
+        ]
+        self._bad_labels = [
+            "BUTTOCKS_EXPOSED",
+            "FEMALE_BREAST_EXPOSED",
+            "FEMALE_GENITALIA_EXPOSED",
+            "ANUS_EXPOSED",
+            "MALE_GENITALIA_EXPOSED",
+        ]
 
     def load_model(self):
         model = tf.keras.models.load_model('model.h5')
@@ -26,7 +55,7 @@ class detect_nude:
         for value in self.model.predict(np.array(preprocessed)):
             if value[1] > 0.5:
                 return False
-        return True
+        return self._layerTwoDetect(frames)
 
     def preprocess_image(self, pil_image: Image):
         if pil_image.mode != "RGB":
@@ -58,3 +87,25 @@ class detect_nude:
         image = image - np.array(vgg_mean, dtype=np.float32)
 
         return image
+    
+    def _layerTwoDetect(self, frames):
+        detection_example = [
+            {'class': 'BELLY_EXPOSED',
+            'score': 0.799403190612793,
+            'box': [64, 182, 49, 51]},
+            {'class': 'FACE_FEMALE',
+            'score': 0.7881264686584473,
+            'box': [82, 66, 36, 43]},
+        ]
+        
+        def _is_bad_label(label):
+            return label in self._bad_labels
+        
+        def _has_bad_label(detections):
+            return any(_is_bad_label(d['class']) and d['score'] > 0.6 for d in detections)
+        
+        for frame in frames:
+            if _has_bad_label(nude_detector.detect(frame)):
+                return False
+        
+        return True
