@@ -10,7 +10,8 @@ nude_detector = NudeDetector()
 
 class detect_nude:
 
-    def __init__(self, config):
+    def __init__(self, sample_rate):
+        self.sample_rate = sample_rate
         self.model = self.load_model()
         self.__labels = [
             "FEMALE_GENITALIA_COVERED",
@@ -45,7 +46,7 @@ class detect_nude:
         return model
 
     def detect(self, frames):
-        frames = sample(frames, len(frames) // 2)
+        frames = sample(frames, self.sample_rate if len(frames) > self.sample_rate else len(frames))
         preprocessed = []
         for frame in frames:
             preprocessed.append(
@@ -89,20 +90,13 @@ class detect_nude:
         return image
     
     def _layerTwoDetect(self, frames):
-        detection_example = [
-            {'class': 'BELLY_EXPOSED',
-            'score': 0.799403190612793,
-            'box': [64, 182, 49, 51]},
-            {'class': 'FACE_FEMALE',
-            'score': 0.7881264686584473,
-            'box': [82, 66, 36, 43]},
-        ]
         
         def _is_bad_label(label):
             return label in self._bad_labels
         
         def _has_bad_label(detections):
-            return any(_is_bad_label(d['class']) and d['score'] > 0.6 for d in detections)
+            print(detections)
+            return any(_is_bad_label(d['class']) and d['score'] > 0.3 for d in detections)
         
         for frame in frames:
             if _has_bad_label(nude_detector.detect(frame)):

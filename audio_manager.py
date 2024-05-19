@@ -24,6 +24,17 @@ class audio_manager:
     def play(self):
         self._play_audio(self.audio, self.empty)
 
+    def filter(self, secondsMask):
+        for index, value in enumerate(secondsMask):
+            if value == False:
+                startInSec = index * 1000
+                endInSec = (index + 1) * 1000
+                diff = endInSec - startInSec
+                secondOfSilence = self.setup_audo_lib().silent(duration=diff)
+                self.audio = self.audio.overlay(secondOfSilence, position=startInSec)
+
+    def export(self, path):
+        self.audio.export(path, format="mp3")
 
     def startSyncThread(self):
         thread = threading.Thread(target=self.play)

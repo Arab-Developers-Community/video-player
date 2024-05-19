@@ -6,6 +6,8 @@ class video_manager:
         self.video = cv2.VideoCapture(path)
         self.frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
         self.fps = int(self.video.get(cv2.CAP_PROP_FPS))
+        self.width  = self.video.get(cv2.CAP_PROP_FRAME_WIDTH)
+        self.height = self.video.get(cv2.CAP_PROP_FRAME_HEIGHT) 
         self.stream_mode = False
 
 
